@@ -22,7 +22,7 @@ def on_message(client, userdata, msg):
     try:
         command = json.loads(msg.payload.decode())
         if command.get("action") == "empty":
-            print(f"[Smart Bin {bin_id}] Received empty command.")
+            print(f"🗑️  Bin {bin_id}] Received empty command.\n")
             trash_level = 0
     except json.JSONDecodeError:
         print(f"[Smart Bin {bin_id}] Received invalid command.")
@@ -44,7 +44,10 @@ try:
         }
 
         client.publish("smartbin/trash", json.dumps(payload))
-        print(f"[Smart Bin {bin_id}] Sent:", payload)
+        bar_length = 20  # Length of the bar
+        filled_length = int(trash_level / 100 * bar_length)
+        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+        print(f"🗑️  Bin {bin_id:2d} |{bar}| {trash_level:3d}%\n")
         time.sleep(2)
 
 except KeyboardInterrupt:
