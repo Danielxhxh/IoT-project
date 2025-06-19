@@ -64,7 +64,7 @@ Replace {id_number} with a number between 0 and 4 (inclusive). Each bin must hav
 ## 👨‍💻 Authors
 
 - [@Danielxhxh](https://github.com/Danielxhxh)
-- [@andreazanacco](https://github.com/andreazanacco)
+- [@im-sofaking](https://github.com/im-sofaking)
 - [@Prestijhonny](https://github.com/Prestijhonny)
 
 
