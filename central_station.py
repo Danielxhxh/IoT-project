@@ -68,8 +68,6 @@ def on_message(client, userdata, msg):
 
 def find_min_route_and_empty(COST_MATRIX, bins_to_empty, client):
     if not bins_to_empty:
-        with open("Results.txt", "a") as f:
-            f.write(f"0\n")
         return
 
     bins = list(bins_to_empty)
@@ -136,7 +134,10 @@ def empty_bins_periodically(client, CLEANING_INTERVAL, UPDATING_FREQUENCY):
         with lock:
             if bins_to_empty:
                 find_min_route_and_empty(COST_MATRIX, bins_to_empty, client)
-            else: print("\nNo bins to empty.\n")
+            else:
+                with open("Results.txt", "a") as f:
+                    f.write(f"0\n") 
+                print("\nNo bins to empty.\n")
 
 
 client = mqtt.Client()
