@@ -13,7 +13,7 @@ def load_config(filepath="conf.yaml"):
 
 # Config file reading
 config = load_config()
-MAX_INCREASE = config["MAX_INCREASE"]
+MAX_INCREASE = int(config["MAX_INCREASE"])
  
 
 parser = argparse.ArgumentParser(description="Smart Bin MQTT Publisher")
