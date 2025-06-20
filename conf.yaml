@@ -5,7 +5,7 @@ COST_MATRIX:
   - [15, 17, 18, -1, 14]
   - [30, 28, 12, 14, -1]
 
-MAX_INCREASE : 10s
+MAX_INCREASE : 10
 
 # ⏳ Cleaning settings
 CLEANING_INTERVAL: 10
