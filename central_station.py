@@ -6,7 +6,7 @@ import time
 import sys
 
 
-# Load the cost matrix from YAML
+# Load configuration from YAML
 def load_config(filepath="conf.yaml"):
     with open(filepath, "r") as file:
         data = yaml.safe_load(file)
@@ -14,51 +14,59 @@ def load_config(filepath="conf.yaml"):
 
 # Config file reading
 config = load_config()
-cost_matrix = config["cost_matrix"]
-cleaningInterval = config.get("cleaningInterval", 30)
-updatingFrequency = config.get("updatingFrequency", 5)
-trashLevelThreshold = config.get("trashLevelThreshold", 80)
+COST_MATRIX = config["COST_MATRIX"]
+CLEANING_INTERVAL = config.get("CLEANING_INTERVAL", 30)
+UPDATING_FREQUENCY = config.get("UPDATING_FREQUENCY", 5)
+TRASH_LEVEL_THRESHOLD = config.get("TRASH_LEVEL_THRESHOLD", 80)
 
 bins_to_empty = set()
 lock = threading.Lock()
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        print("Connected to MQTT broker")
-        client.subscribe("smartbin/trash")
+        print("✅ Connected to MQTT broker")
+
+        # Subscribe to each bin's fill_level topic (excluding 0, the central station)
+        num_bins = len(COST_MATRIX)
+        for bin_id in range(1, num_bins):
+            topic = f"smartbin/{bin_id}/fill_level"
+            client.subscribe(topic)
+            print(f"Subscribed to: {topic}")
+
         # Start periodic emptying thread
         threading.Thread(
-        target=empty_bins_periodically,
-        args=(client, cleaningInterval, updatingFrequency),
-        daemon=True
+            target=empty_bins_periodically,
+            args=(client, CLEANING_INTERVAL, UPDATING_FREQUENCY),
+            daemon=True
         ).start()
-
     else:
         print(f"Connection failed with code {rc}")
+
 
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
-        bin_id = payload.get("id")
         level_str = payload.get("trash")
+        topic_parts = msg.topic.split("/")
+        if len(topic_parts) >= 3 and topic_parts[0] == "smartbin":
+            bin_id = int(topic_parts[1])
 
         if bin_id is None or level_str is None:
-            print("Malformed message:", payload)
+            print("⚠️ Malformed message:", payload)
             return
 
         level = int(level_str.strip('%'))
-        # print(f"🗑️ Bin {bin_id} reports fill level: {level}%")
 
-        if level > trashLevelThreshold:
-            # Add bin_id to bins_to_empty safely
+        if level > TRASH_LEVEL_THRESHOLD:
             with lock:
                 bins_to_empty.add(bin_id)
 
     except Exception as e:
-        print("Error processing message:", e)
+        print("❌ Error processing message:", e)
 
 
-def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
+
+def find_min_route_and_empty(COST_MATRIX, bins_to_empty, client):
     if not bins_to_empty:
         return
 
@@ -75,7 +83,7 @@ def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
         for bin_id in bins:
             if bin_id in visited:
                 continue
-            cost = cost_matrix[current][bin_id]
+            cost = COST_MATRIX[current][bin_id]
             if cost != -1 and cost < min_cost:
                 min_cost = cost
                 next_bin = bin_id
@@ -93,10 +101,9 @@ def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
         topic = f"smartbin/commands/{next_bin}"
         payload = json.dumps({"action": "empty"})
         client.publish(topic, payload)
-        print(f"\n🧺 Emptied bin {next_bin} with cost {min_cost}")
 
     # Return to central station
-    back_cost = cost_matrix[current][0]
+    back_cost = COST_MATRIX[current][0]
     if back_cost != -1:
         total_cost += back_cost
         route.append(0)
@@ -126,7 +133,7 @@ def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
         for bin_id in bins:
             if bin_id in visited:
                 continue
-            cost = cost_matrix[current][bin_id]
+            cost = COST_MATRIX[current][bin_id]
             if cost != -1 and cost < min_cost:
                 min_cost = cost
                 next_bin = bin_id
@@ -141,7 +148,7 @@ def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
         current = next_bin
 
     # Return to central station
-    back_cost = cost_matrix[current][0]
+    back_cost = COST_MATRIX[current][0]
     if back_cost != -1:
         total_cost += back_cost
         route.append(0)
@@ -156,18 +163,19 @@ def find_min_route_and_empty(cost_matrix, bins_to_empty, client):
     bins_to_empty.clear()
 
 
-def empty_bins_periodically(client, cleaningInterval, updatingFrequency):
+def empty_bins_periodically(client, CLEANING_INTERVAL, UPDATING_FREQUENCY):
     while True:
         
-        for i in range(cleaningInterval, 0, -1):
-            if i % updatingFrequency == 0:
-                print(f"⏳ Checking bins in: {i:2d}s")
+        for i in range(CLEANING_INTERVAL, 0, -1):
+            print(f"\r⏳ Checking bins in: {i:2d}s", end='', flush=True)
             time.sleep(1)
+        print()  # Move to the next line after countdown finishes
+
         
 
         with lock:
             if bins_to_empty:
-                find_min_route_and_empty(cost_matrix, bins_to_empty, client)
+                find_min_route_and_empty(COST_MATRIX, bins_to_empty, client)
             else: print("\nNo bins to empty.\n")
 
 

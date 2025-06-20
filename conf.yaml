@@ -1,11 +1,13 @@
-cost_matrix:
+COST_MATRIX:
   - [-1, 10, 20, 15, 30]
   - [10, -1, 25, 17, 28]
   - [20, 25, -1, 18, 12]
   - [15, 17, 18, -1, 14]
   - [30, 28, 12, 14, -1]
 
+MAX_INCREASE : 10s
+
 # ⏳ Cleaning settings
-cleaningInterval: 10
-updatingFrequency: 1
-trashLevelThreshold: 70
+CLEANING_INTERVAL: 10
+UPDATING_FREQUENCY: 1
+TRASH_LEVEL_THRESHOLD: 70
