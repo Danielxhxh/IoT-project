@@ -68,6 +68,8 @@ def on_message(client, userdata, msg):
 
 def find_min_route_and_empty(COST_MATRIX, bins_to_empty, client):
     if not bins_to_empty:
+        with open("Results.txt", "a") as f:
+            f.write(f"0\n")
         return
 
     bins = list(bins_to_empty)
@@ -114,52 +116,10 @@ def find_min_route_and_empty(COST_MATRIX, bins_to_empty, client):
     print(f"✅ Emptied bins: {visited}")
     print(f"💰 Total cleaning cost: {total_cost}\n")
 
+    with open("Results.txt", "a") as f:
+        f.write(f"{total_cost}\n")
+
     # Clear the bins after they've been emptied
-    bins_to_empty.clear()
-
-    if not bins_to_empty:
-        return
-
-    bins = list(bins_to_empty)
-    visited = set()
-    current = 0  # Start at central station (index 0)
-    total_cost = 0
-    route = [0]  # start from central station
-
-    while len(visited) < len(bins):
-        min_cost = float('inf')
-        next_bin = None
-
-        for bin_id in bins:
-            if bin_id in visited:
-                continue
-            cost = COST_MATRIX[current][bin_id]
-            if cost != -1 and cost < min_cost:
-                min_cost = cost
-                next_bin = bin_id
-
-        if next_bin is None:
-            print("⚠️ Error: No reachable unvisited bins.")
-            break
-
-        total_cost += min_cost
-        route.append(next_bin)
-        visited.add(next_bin)
-        current = next_bin
-
-    # Return to central station
-    back_cost = COST_MATRIX[current][0]
-    if back_cost != -1:
-        total_cost += back_cost
-        route.append(0)
-    else:
-        print("⚠️ Error: Cannot return to central station.")
-
-    print(f"🚚 Route taken: {route}")
-    print(f"🧹 Emptied bins: {visited}")
-    print(f"💰 Total cleaning cost: {total_cost}")
-
-    # After emptying, clear the set
     bins_to_empty.clear()
 
 
